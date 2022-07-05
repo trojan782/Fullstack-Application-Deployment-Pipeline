@@ -1,6 +1,25 @@
 version: 2.1
+
+# slack orb for sending notifications 
 orbs: 
   slack: circleci/slack@4.10.1
+commands:
+  destroy-environment:
+    description: Destroy the back-end and front-end cloudformation stack given a workflow ID.
+    parameters:
+        when_destroy:
+            type: string
+            default: "on_fail"
+    steps:
+        - run:
+            name: Destroy Environments
+            when: on_fail
+            command: |
+                echo "*************--Destroying Environments--***********"
+                aws s3 rm s3://udapeople=${CIRCLE_WORKFLOQ_ID:0:7} --recursive
+                aws s3 rb s3://udapeople=${CIRCLE_WORKFLOQ_ID:0:7} --force
+                aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+                aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
 jobs:
   build-frontend:
     docker:
@@ -103,6 +122,50 @@ jobs:
             event: pass
             template: success_tagged_deploy_1
 
+  deploy-infrastructure:
+      docker:
+          - image: amazon/aws-cli
+      steps:
+        - checkout
+        - run:
+            name: Install Dependencies
+            command: |
+                yum install tar gzip -y
+                yum update -y
+        - attach_workspace:
+              at: ~/
+        - run:
+            name: Ensure back-end infrastructure exists
+            command: |
+                aws cloudformation deploy \
+                --template-file .circleci/files/backend.yml \
+                --tags project=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
+                --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+                exit 1
+        - run:
+            name: Ensure front-end infrastructure exists
+            command: |
+                aws cloudformation deploy \
+                --template-file .circleci/files/frontend.yml \
+                --tags project=udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
+                --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+        - run: 
+            name: Add backend ip to inventory
+            command: |
+                cd .circleci/ansible \
+                aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                --output text >> inventory.txt
+        - persist_to_workspace:
+              root: ~/
+              path:
+                - project/.circleci/ansible/inventory.txt
+        - destroy-environment
+
+
+
 workflows:
   default:
     jobs:
@@ -120,4 +183,9 @@ workflows:
           context:
             - slack
           requires: [build-backend]
+      - deploy-infrastructure:
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          filters:
+            branches:
+              only: [test-feature-branch]
 
