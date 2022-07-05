@@ -60,6 +60,10 @@ jobs:
             channel: C03MQSHCVFZ
             event: fail
             template: basic_fail_1
+      - slack/notify:
+            channel: C03MQSHCVFZ
+            event: pass
+            template: basic_pass_1
 
   scan-frontend:
     docker:
@@ -94,6 +98,10 @@ jobs:
             channel: C03MQSHCVFZ
             event: fail
             template: basic_fail_1
+        - slack/notify:
+            channel: C03MQSHCVFZ
+            event: pass
+            template: basic_pass_1
 
 workflows:
   default:
