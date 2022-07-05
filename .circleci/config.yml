@@ -63,7 +63,7 @@ jobs:
       - slack/notify:
             channel: C03MQSHCVFZ
             event: pass
-            template: basic_pass_1
+            template: success_tagged_deploy_1
 
   scan-frontend:
     docker:
@@ -101,7 +101,7 @@ jobs:
         - slack/notify:
             channel: C03MQSHCVFZ
             event: pass
-            template: basic_pass_1
+            template: success_tagged_deploy_1
 
 workflows:
   default:
