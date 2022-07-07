@@ -217,7 +217,8 @@ jobs:
           name: Send migration results to memstash
           command: |
               if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
-              curl --insecure https://kvdb.io/Myriiz5cvLV1w5h2rsLw5n/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+              then
+                  curl --insecure https://kvdb.io/Myriiz5cvLV1w5h2rsLw5n/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
               fi
       - revert-migrations
   deploy-frontend:
