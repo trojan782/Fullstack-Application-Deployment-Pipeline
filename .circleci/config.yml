@@ -306,14 +306,14 @@ jobs:
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
             --output text)
+            echo BACKEND_IP
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-            if curl -s "${API_URL}/api/status" == "ok"
+            curl -s "${API_URL}/api/status" > check
             then
-              return 0
-            else
               return 1
             fi
+            cat check
       - run:
           name: Frontend smoke test.
           command: |
