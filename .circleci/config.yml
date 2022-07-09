@@ -310,9 +310,8 @@ jobs:
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
             curl -s "${API_URL}/api/status" > check
-            then
-              return 1
-            fi
+            cat check
+            return 1
             cat check
       - run:
           name: Frontend smoke test.
