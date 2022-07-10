@@ -173,9 +173,9 @@ jobs:
             name: Add backend ip to inventory
             working_directory: ./.circleci/ansible
             command: |
+                echo "[web]" > inventory
                 aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                echo "[web]" > inventory
                 --output text >> inventory
                 cat inventory
         - persist_to_workspace:
