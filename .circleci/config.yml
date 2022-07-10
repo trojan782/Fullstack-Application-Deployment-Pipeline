@@ -171,15 +171,17 @@ jobs:
                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
         - run: 
             name: Add backend ip to inventory
+            working_directory: ./.circleci/ansible
             command: |
                 aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                --filters "Name=tag:project,Values=udapeople" \
-                --output text >> ~/project/.circleci/ansible/inventory.txt
+                --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                --output text >> inventory
+                cat inventory
         - persist_to_workspace:
               root: ~/
               paths:
-                - project/.circleci/ansible/inventory.txt
+                - .circleci/ansible/inventory
         - destroy-environment
   configure-infrastructure:
     docker: 
@@ -309,10 +311,12 @@ jobs:
             echo BACKEND_IP
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-            curl -s "${API_URL}/api/status" > check
-            cat check
-            return 1
-            cat check
+            if curl -s "${API_URL}/api/status" | grep "ok"
+            then
+              return 0
+            else
+              return 1
+            fi
       - run:
           name: Frontend smoke test.
           command: |
