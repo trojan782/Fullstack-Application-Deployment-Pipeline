@@ -152,7 +152,7 @@ jobs:
                 yum install tar gzip -y
                 yum update -y
         - attach_workspace:
-              at: ~/
+              at: .
         - run:
             name: Ensure back-end infrastructure exists
             command: |
@@ -171,12 +171,11 @@ jobs:
                 --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
         - run: 
             name: Add backend ip to inventory
-            working_directory: ./.circleci/ansible
             command: |
                 aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
                 --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-                --output text >> inventory.txt
+                --output text >> .circleci/ansible/inventory.txt
                 cat inventory
         - persist_to_workspace:
               root: .
@@ -184,7 +183,7 @@ jobs:
                 - .circleci/ansible/inventory.txt
         - destroy-environment:
             workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
-            
+
   configure-infrastructure:
     docker: 
       - image: python:3.7-alpine3.11
@@ -285,7 +284,7 @@ jobs:
               # Zip the directory
               tar -C backend -czvf artifact.tar.gz .
               cd .circleci/ansible
-              echo "Contents  of the inventory.txt file is -------"
+              echo "Contents  of the inventory.txt file is: "
               cat inventory.txt
               ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
