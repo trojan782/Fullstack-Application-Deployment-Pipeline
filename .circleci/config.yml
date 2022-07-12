@@ -53,6 +53,9 @@ jobs:
               cd frontend
               npm install
               npm run build
+      - save_cache:
+          paths: [frontend/node_modules]
+          key: frontend-build
 
   build-backend:
     docker:
@@ -67,6 +70,9 @@ jobs:
               cd backend
               npm install 
               npm run build
+      - save_cache:
+          paths: [backend/node_modules]
+          key: backend-build
 
   test-frontend:
     docker:
@@ -81,6 +87,9 @@ jobs:
               cd frontend
               npm install
               npm run test
+      - save_cache:
+          paths: [frontend/node_modules]
+          key: test-frontend
   test-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -94,6 +103,9 @@ jobs:
               cd backend
               npm install
               npm run test
+      - save_cache:
+          paths: [backend/node_modules]
+          key: backend-build
       - slack/notify:
             channel: C03MQSHCVFZ
             event: fail
@@ -117,6 +129,9 @@ jobs:
               npm install
               npm audit fix --audit-level=critical --force
               npm audit --audit-level=critical
+      - save_cache:
+          paths: [frontend/node_modules]
+          keys: scan-frontend
 
   scan-backend:
       docker:
@@ -132,6 +147,9 @@ jobs:
                 npm install
                 # npm audit fix
                 npm audit fix --audit-level=critical --force
+        - save_cache:
+            paths: [backend/node_modules]
+            keys: scan-backend
         - slack/notify:
             channel: C03MQSHCVFZ
             event: fail
@@ -174,15 +192,15 @@ jobs:
             command: |
                 aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --output text >> .circleci/ansible/inventory.txt
-                cat inventory.txt
+                cat .circleci/ansible/inventory.txt
+
         - persist_to_workspace:
               root: .
               paths:
                 - .circleci/ansible/inventory.txt
-        # - destroy-environment:
-        #     workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+        - destroy-environment:
+            workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
   configure-infrastructure:
     docker: 
@@ -262,18 +280,23 @@ jobs:
       - destroy-environment
   deploy-backend:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: amazon/aws-cli
     steps:
       - checkout
       - add_ssh_keys:
           fingerprints: ["8a:cc:e7:00:b1:d9:57:d9:66:59:54:8e:c1:4f:70:46"]
-      - attach_workspace:
-          at: ~/
+
       - run:
           name: Install dependencies
           command: |
-              apk add --update tar gzip ansible nodejs npm curl
-              pip install awscli
+               yum update -y
+               yum install -y  tar gzip
+               curl -sL https://rpm.nodesource.com/setup_13.x | bash -
+               yum install -y nodejs
+               amazon-linux-extras install -y epel
+               yum install -y ansible
+      - attach_workspace:
+          at: ~/
       - run:
           name: Deploy Backend
           command: |
