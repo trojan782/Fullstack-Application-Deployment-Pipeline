@@ -131,7 +131,7 @@ jobs:
               npm audit --audit-level=critical
       - save_cache:
           paths: [frontend/node_modules]
-          keys: scan-frontend
+          key: scan-frontend
 
   scan-backend:
       docker:
@@ -149,7 +149,7 @@ jobs:
                 npm audit fix --audit-level=critical --force
         - save_cache:
             paths: [backend/node_modules]
-            keys: scan-backend
+            key: scan-backend
         - slack/notify:
             channel: C03MQSHCVFZ
             event: fail
