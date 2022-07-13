@@ -165,10 +165,9 @@ jobs:
       steps:
         - checkout
         - run:
-            name: Install Dependencies
+            name: Install tar and gzip
             command: |
-                apt-get tar gzip 
-                apt-get dist-upgrade
+                yum install -y tar gzip
         - attach_workspace:
               at: .
         - run:
