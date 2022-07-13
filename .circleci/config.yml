@@ -215,7 +215,7 @@ jobs:
           name: Install Dependencies
           command: |
               apk add --update ansible
-              ansible openvpn -m "apt name=python-apt state=latest"
+              ansible --version
       - run: 
           name: Configure Server
           command: | 
@@ -354,6 +354,8 @@ jobs:
       # Here's where you will add some code to rollback on failure
       - destroy-environment
       - revert-migrations
+
+    
 workflows:
   default:
     jobs:
