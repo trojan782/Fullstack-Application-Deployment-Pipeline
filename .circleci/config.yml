@@ -167,8 +167,8 @@ jobs:
         - run:
             name: Install Dependencies
             command: |
-                yum install tar gzip -y
-                yum update -y
+                apt-get tar gzip 
+                apt-get dist-upgrade
         - attach_workspace:
               at: .
         - run:
