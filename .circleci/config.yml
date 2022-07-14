@@ -243,27 +243,28 @@ jobs:
       - revert-migrations
   deploy-frontend:
     docker:
-      - image: amazon/aws-cli
+      - image: python:3.10-alpine3.16
     steps:
       - checkout
-      - run: yum install -y tar gzip
+      # - run: yum install -y tar gzip
       - attach_workspace:
           at: ~/
       - run: 
           name: Install Dependencies
           command: |
-            curl -sL https://rpm.nodesource.com/setup_16.x | bash -
-            yum install -y nodejs
-            yum install -y python3.7
-            curl https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py
-            python get-pip.py --user
-            python -m pip install --user ansible
+             apk add --update --no-cache tar gzip nodejs npm ansible curl aws-cli
+            # curl -sL https://rpm.nodesource.com/setup_16.x | bash -
+            # yum install -y nodejs
+            # yum install -y python3.7
+            # curl https://bootstrap.pypa.io/pip/2.7/get-pip.py -o get-pip.py
+            # python get-pip.py --user
+            # python -m pip install --user ansible
       - run:
           name: Get backend url
           command: |
             export BACKEND_IP=$(aws ec2 describe-instances \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:project,Values=udapeople" \
+            --filters Name=tag:aws:cloudformation:stack-name,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} \
             --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL=${API_URL}"
@@ -278,6 +279,7 @@ jobs:
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive 
       - destroy-environment
+      - revert-migrations
   deploy-backend:
     docker:
       - image: python:3.10-alpine3.16
